@@ -1,10 +1,8 @@
 version: 2.1
-
 orbs:
   node: circleci/node@5.0.1
   docker: circleci/docker@2.1.4
   heroku: circleci/heroku@2.0.0
-
 jobs:
   build:
     docker:
@@ -14,9 +12,8 @@ jobs:
       - node/install-packages:
           pkg-manager: npm
       - run: |
-          echo "Installing dependencies..."
+          echo Installing dependencies...”
           npm install
-
   test:
     docker:
       - image: cimg/node:16.10
@@ -25,8 +22,9 @@ jobs:
       - node/install-packages:
           pkg-manager: npm
       - run: |
-          echo "Running tests..."
-          npm run test 
+          echo “Running tests...”
+          npm run test
+  
   publish:
     executor: docker/docker
     steps:
@@ -37,6 +35,21 @@ jobs:
           image: salie98/education-space
       - docker/push:
           image: salie98/education-space
+  deploy:
+    docker:
+        - image: cimg/node:16.10
+    steps:
+        - setup_remote_docker      
+        - heroku/install
+        - checkout
+        - run:
+            name: Heroku Container Push
+            command: | 
+                heroku container:login
+                heroku stack:set container -a salie98-su-devops
+                heroku container:push web -a salie98-su-devops
+                heroku container:release web -a salie98-su-devops
+
 workflows:
   simple_workflow:
     jobs:
@@ -46,4 +59,7 @@ workflows:
             - build
       - publish:
           requires:
-            - test      
+            - test
+      - deploy:
+          requires:
+            - publish
